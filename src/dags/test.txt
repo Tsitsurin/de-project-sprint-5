@@ -1,0 +1,25 @@
+    
+
+
+
+
+    offset = 0
+    while True:    
+        couriers_rep = requests.get(f'https://{base_url}/couriers/?sort_field=_id&sort_direction=asc&offset={offset}',
+                            headers = headers).json()
+
+        if len(couriers_rep) == 0:
+            conn.commit()
+            cursor.close()
+            conn.close()
+            task_logger.info(f'Writting {offset} rows')
+            break
+
+        
+        columns = ','.join([i for i in couriers_rep[0]])
+        values = [[value for value in couriers_rep[i].values()] for i in range(len(couriers_rep))]
+
+        sql = f"INSERT INTO {pg_schema}.{pg_table} ({columns}) VALUES %s"
+        execute_values(cursor, sql, values)
+
+        offset += len(couriers_rep)
